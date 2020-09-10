@@ -29,4 +29,7 @@ I will be glad if you can contribute with a batch script to automatically downlo
   7- Run train.py
   
   Notify me if there is any issue found. Please note that, I have compiled cython modules with sm61 architecture (GTX 1060, 1070 etc.). Compile support for other architectures will be added. 
+  
+ 7- attention
+  There are three attentions under the lib folder: RCAG(ours), CBAM, DANET, ECA-NET et al.
  
