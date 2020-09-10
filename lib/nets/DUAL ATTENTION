@@ -1,0 +1,37 @@
+def DA_Module(in_dim):
+    #---------------------------------------------------pam----------------------------
+    chanel_in = in_dim
+    query_conv = slim.conv2d(in_dim, 512, kernel_size=1, padding='VALID', scope='query_conv')
+    key_conv = slim.conv2d(in_dim, 512, kernel_size=1, padding='VALID', scope='key_conv')
+    value_conv = slim.conv2d(in_dim, 512, kernel_size=1, padding='VALID', scope='value_conv')
+    gamma = tf.Variable(tf.zeros([1]), name='gamma')
+    camma = tf.Variable(tf.zeros([1]), name='camma')
+    m_batchsize, height, width, C = combined_static_and_dynamic_shape(chanel_in)
+    proj_query = tf.reshape(query_conv, [m_batchsize, -1, width * height])
+    proj_query = tf.transpose(proj_query, [0, 2, 1])
+    # proj_key = key_conv(chanel_in).view(m_batchsize, -1, width * height)
+    proj_key = tf.reshape(key_conv, [m_batchsize, -1, width * height])
+    energy = tf.matmul(proj_query, proj_key)  # 矩阵乘法
+    attention = tf.nn.softmax(energy)  # 添加非线性函数
+    # proj_value = value_conv(chanel_in).view(m_batchsize, -1, width * height
+    proj_value = tf.reshape(value_conv, [m_batchsize, -1, width * height])
+    attention = tf.transpose(attention, [0, 2, 1])
+    out_PAM = tf.matmul(proj_value, attention)
+    out_PAM = tf.reshape(out_PAM, [m_batchsize, height, width, C])  # reshape到原图
+    out_PAM = gamma * out_PAM + chanel_in
+    # ----------------------------------------------------cam----------------------------
+    proj_query_CAM = tf.reshape(chanel_in, [m_batchsize, C, -1])
+    proj_key_CAM = tf.reshape(chanel_in, [m_batchsize, C, -1])
+    proj_key_CAM = tf.transpose(proj_key_CAM, [0, 2, 1])
+    energy_CAM = tf.matmul(proj_query_CAM, proj_key_CAM)  # 矩阵乘法
+    # energy_new = tf.reduce_max(energy_CAM, -1, keepdim=True)
+    # energy_new = energy_new[0].expand_as(energy_CAM)
+    # energy_new = energy_new - energy_CAM
+    attention_CAM = tf.nn.softmax(energy_CAM)  # 添加非线性函数
+    proj_value_CAM = tf.reshape(chanel_in, [m_batchsize, C, -1])
+    out_CAM = tf.matmul(attention_CAM, proj_value_CAM)
+    out_CAM = tf.reshape(out_CAM, [m_batchsize, height, width, C])  # reshape到原图
+    out_CAM = camma * out_CAM + chanel_in
+    out =out_CAM+out_PAM
+
+    return out
